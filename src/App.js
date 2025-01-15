@@ -1,29 +1,56 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import HorizontalCards from "./components/cards";
-import Listing from "./components/Listing";
-import Details from "./components/listingdetails";
+import Navbar from "./components/Nabar";
+import HeroSection from "./components/HeroSection";
+import WhySkyCloud from "./components/whysky";
+import SkyCloudTable from "./components/skytable";
+import VASPackages from "./components/Vas";
+import OtherServices from "./components/otherservices";
+import Footer from "./components/Footer";
+import DomainRegistration from "./components/domainregistration";
+import WebHosting from "./components/webhosting";
 
 function App() {
   return (
     <Router>
       <Navbar />
+
       <Routes>
-        {/* Home Page: HorizontalCards and Listings */}
+        {/* Hero Section Route */}
         <Route
           path="/"
           element={
             <>
-              <HorizontalCards />
-              <Listing />
+              <HeroSection />
+
+              {/* Why SkyCloud Section */}
+              <section id="whycloud">
+                <WhySkyCloud />
+              </section>
+
+              {/* SkyCloud Table Section */}
+              <SkyCloudTable />
+
+              {/* VAS Packages Section */}
+              <section id="iaas">
+                <VASPackages />
+              </section>
+
+              {/* Other Services Section */}
+              <section id="otherservices">
+                <OtherServices />
+              </section>
             </>
           }
         />
 
-        {/* Details Page */}
-        <Route path="/details/:id" element={<Details />} />
+        {/* Domain Registration Route */}
+        <Route path="/domain-registration" element={<DomainRegistration />} />
+        <Route path="/web-hosting" element={<WebHosting />} />
       </Routes>
+
+      {/* Footer */}
+      <Footer />
     </Router>
   );
 }
