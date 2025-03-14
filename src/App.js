@@ -4,6 +4,11 @@ import AdminLogin from "./componenets/Login";
 import Sidebar from "./componenets/sidebar";
 import AllOrders from "./componenets/allOrders";
 import AddProduct from "./componenets/addProducts";
+import AllEmployees from "./componenets/allEmployees";
+import AddEmployee from "./componenets/addEmployee";
+import EditEmployees from "./componenets/EditEmployees";
+import HomePage from "./componenets/home";
+import { Home } from "lucide-react";
 
 function App() {
   return (
@@ -31,6 +36,40 @@ function App() {
           element={
             <>
               <AddProduct />
+            </>
+          }
+        />
+        <Route
+          path="/all-employees"
+          element={
+            <>
+              <AllEmployees />
+            </>
+          }
+        />
+        <Route
+          path="/admin/employee/edit"
+          element={
+            <>
+              <EditEmployees />
+            </>
+          }
+        />
+
+        <Route
+          path="/admin/employee/add"
+          element={
+            <>
+              <AddEmployee />
+            </>
+          }
+        />
+
+        <Route
+          path="/home"
+          element={
+            <>
+              <HomePage />
             </>
           }
         />

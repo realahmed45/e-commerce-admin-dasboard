@@ -13,7 +13,7 @@ const AdminLogin = () => {
   // Then use backgroundImage as needed
 
   // API base URL pointing to port 5000
-  const API_BASE_URL = "http://localhost:5000";
+  const API_BASE_URL = "https://ultra-inquisitive-oatmeal.glitch.me/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +37,7 @@ const AdminLogin = () => {
           localStorage.setItem("adminToken", data.token);
         }
         // Redirect to admin dashboard on success
-        window.location.href = "/all-orders";
+        window.location.href = "/home";
       } else {
         setError(data.message || "Login failed");
       }
