@@ -246,7 +246,7 @@ const AddEmployee = () => {
       {/* Main content area with proper margin */}
       <div
         className={`flex-1 transition-all duration-300 overflow-auto ${
-          isSidebarOpen ? "ml-80" : "ml-0"
+          isSidebarOpen ? "lg:ml-80" : "ml-0"
         }`}
       >
         <div className="max-w-6xl mx-auto p-6 bg-white shadow-sm rounded-lg my-6">

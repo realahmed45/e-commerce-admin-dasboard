@@ -151,7 +151,7 @@ const AllEmployees = () => {
       {/* Main content area with proper margin */}
       <div
         className={`flex-1 transition-all duration-300 overflow-auto ${
-          isSidebarOpen ? "ml-80" : "ml-0"
+          isSidebarOpen ? "lg:ml-80" : "ml-0"
         }`}
       >
         {/* Main content */}
