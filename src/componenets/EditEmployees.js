@@ -77,7 +77,7 @@ const EditEmployees = () => {
   ];
 
   // Base API URL for the local server
-  const API_BASE_URL = "http://localhost:5000";
+  const API_BASE_URL = "https://ultra-inquisitive-oatmeal.glitch.me/";
 
   // Fetch employees data from the API
   useEffect(() => {

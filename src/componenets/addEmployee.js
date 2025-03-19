@@ -1,9 +1,12 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { ChevronDown, Upload, PlusCircle, X, AlertCircle } from "lucide-react";
 import Sidebar from "./sidebar";
 
-const AddEmployee = () => {
+// Base URL for API requests
+const API_BASE_URL = "https://ultra-inquisitive-oatmeal.glitch.me";
+
+const AddEmployee = ({ employeeId }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -44,6 +47,7 @@ const AddEmployee = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Refs for file inputs
   const profilePictureRef = useRef(null);
@@ -73,6 +77,75 @@ const AddEmployee = () => {
     "Relative",
     "Other",
   ];
+
+  // Check if we're in edit mode and fetch employee data if so
+  useEffect(() => {
+    if (employeeId) {
+      setIsEditMode(true);
+      fetchEmployeeData(employeeId);
+    }
+  }, [employeeId]);
+
+  const fetchEmployeeData = async (id) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/employees/${id}`);
+      const employeeData = response.data;
+
+      // Set form data
+      setFormData({
+        name: employeeData.name || "",
+        email: employeeData.email || "",
+        phone: employeeData.phone || "",
+        address: employeeData.address || "",
+        emergencyContact: employeeData.emergencyContact || "",
+        homeLocation: employeeData.homeLocation || "",
+        addedOn: employeeData.addedOn
+          ? employeeData.addedOn.slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
+        roles: employeeData.roles || [],
+      });
+
+      // Set contacts
+      if (employeeData.contacts && employeeData.contacts.length > 0) {
+        setContacts(employeeData.contacts);
+      }
+
+      // Set activation and block status
+      setIsActivated(employeeData.isActivated !== false);
+      setIsBlocked(employeeData.isBlocked === true);
+
+      // Set preview URLs for existing images
+      const updatedPreviewUrls = { ...previewUrls };
+
+      // Helper function to set preview URL if image exists
+      const setPreviewIfExists = (fieldName, imageUrl) => {
+        if (imageUrl) {
+          // Ensure the URL is absolute
+          const fullUrl = imageUrl.startsWith("http")
+            ? imageUrl
+            : `${API_BASE_URL}${
+                imageUrl.startsWith("/") ? "" : "/"
+              }${imageUrl}`;
+
+          updatedPreviewUrls[fieldName] = fullUrl;
+        }
+      };
+
+      // Set preview URLs for all image fields
+      setPreviewIfExists("profilePicture", employeeData.profilePicture);
+      setPreviewIfExists("idCardFront", employeeData.idCardFront);
+      setPreviewIfExists("idCardBack", employeeData.idCardBack);
+      setPreviewIfExists("passportFront", employeeData.passportFront);
+      setPreviewIfExists("passportBack", employeeData.passportBack);
+      setPreviewIfExists("otherDoc1", employeeData.otherDoc1);
+      setPreviewIfExists("otherDoc2", employeeData.otherDoc2);
+
+      setPreviewUrls(updatedPreviewUrls);
+    } catch (error) {
+      console.error("Error fetching employee data:", error);
+      setErrorMessage("Failed to load employee data. Please try again.");
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -143,7 +216,17 @@ const AddEmployee = () => {
 
   // Validate that either ID card or passport is uploaded
   const validateIdentification = () => {
-    if (!idCardFront && !passportFront) {
+    // In edit mode, if we already have preview URLs, we don't need new uploads
+    if (isEditMode && (previewUrls.idCardFront || previewUrls.passportFront)) {
+      return true;
+    }
+
+    if (
+      !idCardFront &&
+      !passportFront &&
+      !previewUrls.idCardFront &&
+      !previewUrls.passportFront
+    ) {
       setValidationError(
         "Please upload either an ID card or passport for identification"
       );
@@ -182,7 +265,7 @@ const AddEmployee = () => {
     // Append contacts as JSON
     submitData.append("contacts", JSON.stringify(contacts));
 
-    // Append files if they exist
+    // Append files if they exist (only append new files, not existing ones)
     if (profilePicture) submitData.append("profilePicture", profilePicture);
     if (idCardFront) submitData.append("idCardFront", idCardFront);
     if (idCardBack) submitData.append("idCardBack", idCardBack);
@@ -191,21 +274,52 @@ const AddEmployee = () => {
     if (otherDoc1) submitData.append("otherDoc1", otherDoc1);
     if (otherDoc2) submitData.append("otherDoc2", otherDoc2);
 
+    // For existing images that haven't been changed, pass the URLs
+    if (!profilePicture && previewUrls.profilePicture)
+      submitData.append("existingProfilePicture", previewUrls.profilePicture);
+    if (!idCardFront && previewUrls.idCardFront)
+      submitData.append("existingIdCardFront", previewUrls.idCardFront);
+    if (!idCardBack && previewUrls.idCardBack)
+      submitData.append("existingIdCardBack", previewUrls.idCardBack);
+    if (!passportFront && previewUrls.passportFront)
+      submitData.append("existingPassportFront", previewUrls.passportFront);
+    if (!passportBack && previewUrls.passportBack)
+      submitData.append("existingPassportBack", previewUrls.passportBack);
+    if (!otherDoc1 && previewUrls.otherDoc1)
+      submitData.append("existingOtherDoc1", previewUrls.otherDoc1);
+    if (!otherDoc2 && previewUrls.otherDoc2)
+      submitData.append("existingOtherDoc2", previewUrls.otherDoc2);
+
     submitData.append("isActivated", isActivated);
     submitData.append("isBlocked", isBlocked);
 
     try {
-      const response = await axios.post(
-        "https://ultra-inquisitive-oatmeal.glitch.me/api/employees",
-        submitData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      let response;
+      if (isEditMode) {
+        // Update existing employee
+        response = await axios.put(
+          `${API_BASE_URL}/api/employees/${employeeId}`,
+          submitData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+      } else {
+        // Create new employee
+        response = await axios.post(
+          `${API_BASE_URL}/api/employees`,
+          submitData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+      }
 
-      if (response.status === 201) {
+      if (response.status === 200 || response.status === 201) {
         setShowSuccessMessage(true);
 
         // Show success message briefly and then refresh the page
@@ -214,10 +328,12 @@ const AddEmployee = () => {
         }, 1500); // 1.5 seconds delay to show the success message
       }
     } catch (error) {
-      console.error("Error adding employee:", error);
+      console.error("Error saving employee:", error);
       setErrorMessage(
         error.response?.data?.message ||
-          "Failed to add employee. Please try again."
+          `Failed to ${
+            isEditMode ? "update" : "add"
+          } employee. Please try again.`
       );
     }
   };
@@ -245,7 +361,8 @@ const AddEmployee = () => {
               <strong className="font-bold">Success!</strong>
               <span className="block sm:inline">
                 {" "}
-                Employee added successfully.
+                Employee {isEditMode ? "updated" : "added"} successfully.
+                Refreshing...
               </span>
               <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
                 <svg
@@ -285,7 +402,7 @@ const AddEmployee = () => {
           )}
 
           <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">
-            ADD EMPLOYEE DETAILS
+            {isEditMode ? "EDIT EMPLOYEE DETAILS" : "ADD EMPLOYEE DETAILS"}
           </h1>
 
           <form onSubmit={handleSubmit}>
@@ -299,7 +416,10 @@ const AddEmployee = () => {
                     type="text"
                     className="w-full p-2 border border-gray-300 rounded"
                     disabled
-                    placeholder="Will be auto-generated"
+                    placeholder={
+                      isEditMode ? employeeId : "Will be auto-generated"
+                    }
+                    value={isEditMode ? employeeId : ""}
                   />
                 </div>
 
@@ -586,7 +706,11 @@ const AddEmployee = () => {
                       </label>
                       <div
                         className={`border ${
-                          validationError && !idCardFront && !passportFront
+                          validationError &&
+                          !idCardFront &&
+                          !passportFront &&
+                          !previewUrls.idCardFront &&
+                          !previewUrls.passportFront
                             ? "border-red-300 bg-red-50"
                             : "border-gray-300"
                         } rounded h-32 flex items-center justify-center overflow-hidden relative`}
