@@ -9,6 +9,7 @@ import {
   X,
   Upload,
   AlertCircle,
+  PlusCircle,
 } from "lucide-react";
 import Sidebar from "./sidebar";
 
@@ -26,6 +27,9 @@ const EditEmployees = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentEmployee, setCurrentEmployee] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [contacts, setContacts] = useState([
+    { name: "", relation: "", phoneNumber: "" },
+  ]);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [validationError, setValidationError] = useState("");
@@ -72,14 +76,15 @@ const EditEmployees = () => {
     "Other",
   ];
 
+  // Base API URL for the local server
+  const API_BASE_URL = "http://localhost:5000";
+
   // Fetch employees data from the API
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          "https://ultra-inquisitive-oatmeal.glitch.me/api/employees"
-        );
+        const response = await axios.get(`${API_BASE_URL}/api/employees`);
         setEmployees(response.data.data);
         setTotalItems(response.data.count);
         setLoading(false);
@@ -197,37 +202,53 @@ const EditEmployees = () => {
       address: employee.address || "",
       emergencyContact: employee.emergencyContact || "",
       homeLocation: employee.homeLocation || "",
-      contactName: employee.contactName || "",
-      contactRelation: employee.contactRelation || "",
       roles: employee.roles || [],
-      addedOn: employee.addedOn || new Date().toISOString().slice(0, 10),
+      addedOn: employee.addedOn
+        ? new Date(employee.addedOn).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10),
       isActivated:
         employee.isActivated !== undefined ? employee.isActivated : true,
       isBlocked: employee.isBlocked !== undefined ? employee.isBlocked : false,
     });
 
-    // Initialize preview URLs if images are available
+    // Initialize contacts
+    if (employee.contacts && employee.contacts.length > 0) {
+      setContacts(employee.contacts);
+    } else if (employee.contactName && employee.contactRelation) {
+      // For backward compatibility with old data format
+      setContacts([
+        {
+          name: employee.contactName || "",
+          relation: employee.contactRelation || "",
+          phoneNumber: "",
+        },
+      ]);
+    } else {
+      setContacts([{ name: "", relation: "", phoneNumber: "" }]);
+    }
+
+    // Initialize preview URLs with full URLs for images
     setPreviewUrls({
       profilePicture: employee.profilePicture
-        ? `https://ultra-inquisitive-oatmeal.glitch.me${employee.profilePicture}`
+        ? `${API_BASE_URL}${employee.profilePicture}`
         : null,
       idCardFront: employee.idCardFront
-        ? `https://ultra-inquisitive-oatmeal.glitch.me${employee.idCardFront}`
+        ? `${API_BASE_URL}${employee.idCardFront}`
         : null,
       idCardBack: employee.idCardBack
-        ? `https://ultra-inquisitive-oatmeal.glitch.me${employee.idCardBack}`
+        ? `${API_BASE_URL}${employee.idCardBack}`
         : null,
       passportFront: employee.passportFront
-        ? `https://ultra-inquisitive-oatmeal.glitch.me${employee.passportFront}`
+        ? `${API_BASE_URL}${employee.passportFront}`
         : null,
       passportBack: employee.passportBack
-        ? `https://ultra-inquisitive-oatmeal.glitch.me${employee.passportBack}`
+        ? `${API_BASE_URL}${employee.passportBack}`
         : null,
       otherDoc1: employee.otherDoc1
-        ? `https://ultra-inquisitive-oatmeal.glitch.me${employee.otherDoc1}`
+        ? `${API_BASE_URL}${employee.otherDoc1}`
         : null,
       otherDoc2: employee.otherDoc2
-        ? `https://ultra-inquisitive-oatmeal.glitch.me${employee.otherDoc2}`
+        ? `${API_BASE_URL}${employee.otherDoc2}`
         : null,
     });
 
@@ -247,6 +268,26 @@ const EditEmployees = () => {
       ...editFormData,
       [name]: value,
     });
+  };
+
+  // Handle contact field changes
+  const handleContactChange = (index, field, value) => {
+    const updatedContacts = [...contacts];
+    updatedContacts[index][field] = value;
+    setContacts(updatedContacts);
+  };
+
+  // Add new contact
+  const addContact = () => {
+    setContacts([...contacts, { name: "", relation: "", phoneNumber: "" }]);
+  };
+
+  // Remove contact
+  const removeContact = (index) => {
+    if (contacts.length > 1) {
+      const updatedContacts = contacts.filter((_, i) => i !== index);
+      setContacts(updatedContacts);
+    }
   };
 
   // Handle role toggle in edit form
@@ -321,6 +362,9 @@ const EditEmployees = () => {
         }
       });
 
+      // Append contacts as JSON
+      formData.append("contacts", JSON.stringify(contacts));
+
       // Append files if they were changed
       if (profilePictureRef.current.files[0]) {
         formData.append("profilePicture", profilePictureRef.current.files[0]);
@@ -346,7 +390,7 @@ const EditEmployees = () => {
 
       // Send PUT request to update employee
       const response = await axios.put(
-        `https://ultra-inquisitive-oatmeal.glitch.me/api/employees/${currentEmployee._id}`,
+        `${API_BASE_URL}/api/employees/${currentEmployee._id}`,
         formData,
         {
           headers: {
@@ -385,7 +429,7 @@ const EditEmployees = () => {
   const handleDeleteConfirm = async () => {
     try {
       const response = await axios.delete(
-        `https://ultra-inquisitive-oatmeal.glitch.me/api/employees/${currentEmployee._id}`
+        `${API_BASE_URL}/api/employees/${currentEmployee._id}`
       );
 
       if (response.status === 200) {
@@ -407,6 +451,7 @@ const EditEmployees = () => {
     } catch (error) {
       console.error("Error deleting employee:", error);
       setError("Failed to delete employee. Please try again.");
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -525,22 +570,23 @@ const EditEmployees = () => {
                     <tr className="text-left text-gray-500 border-b">
                       <th className="pb-3 pl-2 pr-4">ID</th>
                       <th className="pb-3 px-4">NAME</th>
-                      <th className="pb-3 px-4">LAST ACTIVITY</th>
-                      <th className="pb-3 px-4">ROLES</th>
+                      <th className="pb-3 px-4">Date Added</th>
+                      <th className="pb-3 px-4">Last Edited</th>
+                      <th className="pb-3 px-4">PERMISSIONS</th>
                       <th className="pb-3 px-4">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan="5" className="py-4 text-center">
+                        <td colSpan="6" className="py-4 text-center">
                           Loading employees...
                         </td>
                       </tr>
                     ) : error ? (
                       <tr>
                         <td
-                          colSpan="5"
+                          colSpan="6"
                           className="py-4 text-center text-red-500"
                         >
                           {error}
@@ -548,7 +594,7 @@ const EditEmployees = () => {
                       </tr>
                     ) : currentItems.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-4 text-center">
+                        <td colSpan="6" className="py-4 text-center">
                           No employees found
                         </td>
                       </tr>
@@ -565,7 +611,10 @@ const EditEmployees = () => {
                             {employee.name || "Joseph Wheeler"}
                           </td>
                           <td className="py-4 px-4 text-gray-800">
-                            {formatDate(employee.updatedAt) || "6 April, 2023"}
+                            {formatDate(employee.createdAt) || "6 April, 2023"}
+                          </td>
+                          <td className="py-4 px-4 text-gray-800">
+                            {formatDate(employee.updatedAt) || "-"}
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex flex-wrap gap-2">
@@ -776,26 +825,12 @@ const EditEmployees = () => {
                         required
                       />
                     </div>
-
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Contact of friend/family
-                      </label>
-                      <input
-                        type="text"
-                        name="contactName"
-                        value={editFormData.contactName || ""}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded"
-                        required
-                      />
-                    </div>
                   </div>
 
                   <div className="col-span-1">
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Employee Name
+                        Employee Full Name
                       </label>
                       <input
                         type="text"
@@ -833,31 +868,6 @@ const EditEmployees = () => {
                         className="w-full p-2 border border-gray-300 rounded"
                         required
                       />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Relation
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="contactRelation"
-                          value={editFormData.contactRelation || ""}
-                          onChange={handleInputChange}
-                          className="appearance-none w-full p-2 border border-gray-300 rounded pr-8"
-                          required
-                        >
-                          <option value="">Select relation</option>
-                          {relationOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                          <ChevronDown size={16} />
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -901,9 +911,107 @@ const EditEmployees = () => {
                   </div>
                 </div>
 
+                {/* Friend/Family Contacts Section */}
+                <div className="border-t border-b py-6 my-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-800">
+                      Friends/Family Contacts
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={addContact}
+                      className="flex items-center text-blue-600 hover:text-blue-800"
+                    >
+                      <PlusCircle size={18} className="mr-1" /> Add Contact
+                    </button>
+                  </div>
+
+                  {contacts.map((contact, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-wrap md:flex-nowrap gap-4 mb-4 pb-4 border-b border-gray-100 relative"
+                    >
+                      <div className="w-full md:w-1/3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          value={contact.name || ""}
+                          onChange={(e) =>
+                            handleContactChange(index, "name", e.target.value)
+                          }
+                          className="w-full p-2 border border-gray-300 rounded"
+                          required
+                        />
+                      </div>
+
+                      <div className="w-full md:w-1/3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Relation
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={contact.relation || ""}
+                            onChange={(e) =>
+                              handleContactChange(
+                                index,
+                                "relation",
+                                e.target.value
+                              )
+                            }
+                            className="appearance-none w-full p-2 border border-gray-300 rounded pr-8"
+                            required
+                          >
+                            <option value="">Select relation</option>
+                            {relationOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <ChevronDown size={16} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="w-full md:w-1/3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={contact.phoneNumber || ""}
+                          onChange={(e) =>
+                            handleContactChange(
+                              index,
+                              "phoneNumber",
+                              e.target.value
+                            )
+                          }
+                          className="w-full p-2 border border-gray-300 rounded"
+                          required
+                        />
+                      </div>
+
+                      {contacts.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeContact(index)}
+                          className="absolute top-0 right-0 text-red-500 hover:text-red-700"
+                          aria-label="Remove contact"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
                 <div className="border-t border-b py-6 my-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Employee Roles
+                    PERMISSIONS
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {roleOptions.slice(1).map((role) => {
@@ -924,20 +1032,6 @@ const EditEmployees = () => {
                       );
                     })}
                   </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Added on
-                  </label>
-                  <input
-                    type="date"
-                    name="addedOn"
-                    value={editFormData.addedOn || ""}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded"
-                    required
-                  />
                 </div>
 
                 <div className="border-t border-b py-6 my-6 id-docs-section">
@@ -966,7 +1060,7 @@ const EditEmployees = () => {
                               <img
                                 src={previewUrls.idCardFront}
                                 alt="ID Card Front"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             ) : (
                               <div className="text-center p-4 cursor-pointer">
@@ -1003,7 +1097,7 @@ const EditEmployees = () => {
                               <img
                                 src={previewUrls.idCardBack}
                                 alt="ID Card Back"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             ) : (
                               <div className="text-center p-4 cursor-pointer">
@@ -1054,7 +1148,7 @@ const EditEmployees = () => {
                               <img
                                 src={previewUrls.passportFront}
                                 alt="Passport Front"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             ) : (
                               <div className="text-center p-4 cursor-pointer">
@@ -1091,7 +1185,7 @@ const EditEmployees = () => {
                               <img
                                 src={previewUrls.passportBack}
                                 alt="Passport Back"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             ) : (
                               <div className="text-center p-4 cursor-pointer">
@@ -1138,7 +1232,7 @@ const EditEmployees = () => {
                           <img
                             src={previewUrls.otherDoc1}
                             alt="Other Document 1"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                           />
                         ) : (
                           <div className="text-center p-4 cursor-pointer">
@@ -1168,7 +1262,7 @@ const EditEmployees = () => {
                           <img
                             src={previewUrls.otherDoc2}
                             alt="Other Document 2"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                           />
                         ) : (
                           <div className="text-center p-4 cursor-pointer">

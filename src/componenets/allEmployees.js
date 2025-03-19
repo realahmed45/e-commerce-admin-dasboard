@@ -205,7 +205,7 @@ const AllEmployees = () => {
                     <tr className="text-left text-gray-500 border-b">
                       <th className="pb-3 pl-2 pr-4">ID</th>
                       <th className="pb-3 px-4">NAME</th>
-                      <th className="pb-3 px-4">LAST ACTIVITY</th>
+                      <th className="pb-3 px-4">Date Added</th>
                       <th className="pb-3 px-4">ROLES</th>
                     </tr>
                   </thead>

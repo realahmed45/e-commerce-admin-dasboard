@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
-import { ChevronDown, Upload, Check, X, AlertCircle } from "lucide-react";
+import { ChevronDown, Upload, PlusCircle, X, AlertCircle } from "lucide-react";
 import Sidebar from "./sidebar";
 
 const AddEmployee = () => {
@@ -11,11 +11,14 @@ const AddEmployee = () => {
     address: "",
     emergencyContact: "",
     homeLocation: "",
-    contactName: "",
-    contactRelation: "",
-    roles: [],
     addedOn: new Date().toISOString().slice(0, 10),
+    roles: [],
   });
+
+  // Separate state for contacts
+  const [contacts, setContacts] = useState([
+    { name: "", relation: "", phoneNumber: "" },
+  ]);
 
   const [profilePicture, setProfilePicture] = useState(null);
   const [idCardFront, setIdCardFront] = useState(null);
@@ -77,6 +80,23 @@ const AddEmployee = () => {
       ...formData,
       [name]: value,
     });
+  };
+
+  const handleContactChange = (index, field, value) => {
+    const updatedContacts = [...contacts];
+    updatedContacts[index][field] = value;
+    setContacts(updatedContacts);
+  };
+
+  const addContact = () => {
+    setContacts([...contacts, { name: "", relation: "", phoneNumber: "" }]);
+  };
+
+  const removeContact = (index) => {
+    if (contacts.length > 1) {
+      const updatedContacts = contacts.filter((_, i) => i !== index);
+      setContacts(updatedContacts);
+    }
   };
 
   const handleRoleToggle = (roleId) => {
@@ -159,6 +179,9 @@ const AddEmployee = () => {
       }
     });
 
+    // Append contacts as JSON
+    submitData.append("contacts", JSON.stringify(contacts));
+
     // Append files if they exist
     if (profilePicture) submitData.append("profilePicture", profilePicture);
     if (idCardFront) submitData.append("idCardFront", idCardFront);
@@ -185,46 +208,10 @@ const AddEmployee = () => {
       if (response.status === 201) {
         setShowSuccessMessage(true);
 
-        // Reset form after 3 seconds
+        // Show success message briefly and then refresh the page
         setTimeout(() => {
-          setShowSuccessMessage(false);
-
-          // Reset form
-          setFormData({
-            name: "",
-            email: "",
-            phone: "",
-            address: "",
-            emergencyContact: "",
-            homeLocation: "",
-            contactName: "",
-            contactRelation: "",
-            roles: [],
-            addedOn: new Date().toISOString().slice(0, 10),
-          });
-
-          setProfilePicture(null);
-          setIdCardFront(null);
-          setIdCardBack(null);
-          setPassportFront(null);
-          setPassportBack(null);
-          setOtherDoc1(null);
-          setOtherDoc2(null);
-
-          setPreviewUrls({
-            profilePicture: null,
-            idCardFront: null,
-            idCardBack: null,
-            passportFront: null,
-            passportBack: null,
-            otherDoc1: null,
-            otherDoc2: null,
-          });
-
-          setIsActivated(true);
-          setIsBlocked(false);
-          setValidationError("");
-        }, 3000);
+          window.location.reload(); // This will refresh the page
+        }, 1500); // 1.5 seconds delay to show the success message
       }
     } catch (error) {
       console.error("Error adding employee:", error);
@@ -357,20 +344,6 @@ const AddEmployee = () => {
                     required
                   />
                 </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contact of friend/family 1
-                  </label>
-                  <input
-                    type="text"
-                    name="contactName"
-                    value={formData.contactName}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded"
-                    required
-                  />
-                </div>
               </div>
 
               <div className="col-span-1">
@@ -415,47 +388,6 @@ const AddEmployee = () => {
                     required
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      name
-                    </label>
-                    <input
-                      type="text"
-                      name="contactName"
-                      value={formData.contactName}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border border-gray-300 rounded"
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      relation
-                    </label>
-                    <div className="relative">
-                      <select
-                        name="contactRelation"
-                        value={formData.contactRelation}
-                        onChange={handleInputChange}
-                        className="appearance-none w-full p-2 border border-gray-300 rounded pr-8"
-                        required
-                      >
-                        <option value="">Select relation</option>
-                        {relationOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                        <ChevronDown size={16} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="col-span-1">
@@ -493,6 +425,100 @@ const AddEmployee = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Friend/Family Contacts Section */}
+            <div className="border-t border-b py-6 my-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-800">
+                  Friends/Family Contacts
+                </h3>
+                <button
+                  type="button"
+                  onClick={addContact}
+                  className="flex items-center text-blue-600 hover:text-blue-800"
+                >
+                  <PlusCircle size={18} className="mr-1" /> Add Contact
+                </button>
+              </div>
+
+              {contacts.map((contact, index) => (
+                <div
+                  key={index}
+                  className="flex flex-wrap md:flex-nowrap gap-4 mb-4 pb-4 border-b border-gray-100 relative"
+                >
+                  <div className="w-full md:w-1/3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={contact.name}
+                      onChange={(e) =>
+                        handleContactChange(index, "name", e.target.value)
+                      }
+                      className="w-full p-2 border border-gray-300 rounded"
+                      required
+                    />
+                  </div>
+
+                  <div className="w-full md:w-1/3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Relation
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={contact.relation}
+                        onChange={(e) =>
+                          handleContactChange(index, "relation", e.target.value)
+                        }
+                        className="appearance-none w-full p-2 border border-gray-300 rounded pr-8"
+                        required
+                      >
+                        <option value="">Select relation</option>
+                        {relationOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <ChevronDown size={16} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="w-full md:w-1/3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={contact.phoneNumber}
+                      onChange={(e) =>
+                        handleContactChange(
+                          index,
+                          "phoneNumber",
+                          e.target.value
+                        )
+                      }
+                      className="w-full p-2 border border-gray-300 rounded"
+                      required
+                    />
+                  </div>
+
+                  {contacts.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeContact(index)}
+                      className="absolute top-0 right-0 text-red-500 hover:text-red-700"
+                      aria-label="Remove contact"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
 
             <div className="border-t border-b py-6 my-6">

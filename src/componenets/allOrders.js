@@ -49,6 +49,11 @@ const OrderStatusFilters = [
     label: "Order Complete successfully",
     color: "#86efac",
   },
+  {
+    id: "order not picked",
+    label: "Orders waiting for customers to pick up",
+    color: "#c084fc",
+  },
 ];
 
 // Generate dummy orders with various statuses
