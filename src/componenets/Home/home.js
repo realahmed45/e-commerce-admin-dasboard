@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Home, User } from "lucide-react";
-import Sidebar from "./sidebar";
+import Sidebar from "../Sidebar/sidebar";
 
 const HomePage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

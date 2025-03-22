@@ -1,14 +1,17 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AdminLogin from "./componenets/Login";
-import Sidebar from "./componenets/sidebar";
-import AllOrders from "./componenets/allOrders";
-import AddProduct from "./componenets/addProducts";
-import AllEmployees from "./componenets/allEmployees";
-import AddEmployee from "./componenets/addEmployee";
-import EditEmployees from "./componenets/EditEmployees";
-import HomePage from "./componenets/home";
+import AdminLogin from "./componenets/Login/Login";
+import Sidebar from "./componenets/Sidebar/sidebar";
+import AllOrders from "./componenets/Orders/allOrders";
+import AddProduct from "./componenets/Products/addProducts";
+import AllEmployees from "./componenets/Employees/allEmployees";
+import AddEmployee from "./componenets/Employees/addEmployee";
+import EditEmployees from "./componenets/Employees/EditEmployees";
+import HomePage from "./componenets/Home/home";
+import SupplierProfile from "./componenets/Supplier/AddSupplier";
 import { Home } from "lucide-react";
+import SuppliersList from "./componenets/Supplier/EditSupplier";
+import SupplierViewOnly from "./componenets/Supplier/ViewSuppliers";
 
 function App() {
   return (
@@ -47,6 +50,31 @@ function App() {
             </>
           }
         />
+        <Route
+          path="/admin/supplier/add"
+          element={
+            <>
+              <SupplierProfile />
+            </>
+          }
+        />
+        <Route
+          path="admin/supplier/edit"
+          element={
+            <>
+              <SuppliersList />
+            </>
+          }
+        />
+        <Route
+          path="view-suppliers"
+          element={
+            <>
+              <SupplierViewOnly />
+            </>
+          }
+        />
+
         <Route
           path="/admin/employee/edit"
           element={

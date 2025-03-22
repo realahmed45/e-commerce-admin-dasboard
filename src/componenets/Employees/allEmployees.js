@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Search, ChevronDown, Bell } from "lucide-react";
-import Sidebar from "./sidebar";
+import Sidebar from "../Sidebar/sidebar";
 
 const AllEmployees = () => {
   const [employees, setEmployees] = useState([]);

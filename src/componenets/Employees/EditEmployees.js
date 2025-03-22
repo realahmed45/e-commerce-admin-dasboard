@@ -11,7 +11,7 @@ import {
   AlertCircle,
   PlusCircle,
 } from "lucide-react";
-import Sidebar from "./sidebar";
+import Sidebar from "../Sidebar/sidebar";
 
 const EditEmployees = () => {
   const [employees, setEmployees] = useState([]);
@@ -33,6 +33,9 @@ const EditEmployees = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [validationError, setValidationError] = useState("");
+  const closeSuccessModal = () => {
+    setSuccessModal({ isOpen: false, message: "" });
+  };
 
   // Refs for file inputs
   const profilePictureRef = useRef(null);
@@ -41,7 +44,16 @@ const EditEmployees = () => {
   const passportFrontRef = useRef(null);
   const passportBackRef = useRef(null);
   const otherDoc1Ref = useRef(null);
-  const otherDoc2Ref = useRef(null);
+  const otherDoc2Ref = useRef(null); // Auto-close success modal after delay
+  useEffect(() => {
+    let timer;
+    if (successModal.isOpen) {
+      timer = setTimeout(() => {
+        closeSuccessModal();
+      }, 5000); // 5 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [successModal.isOpen]);
 
   // For image previews
   const [previewUrls, setPreviewUrls] = useState({
@@ -281,6 +293,14 @@ const EditEmployees = () => {
   const addContact = () => {
     setContacts([...contacts, { name: "", relation: "", phoneNumber: "" }]);
   };
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    message: "",
+  });
+  // Success Modal Component
+  const SuccessModal = ({ isOpen, onClose, message }) => {
+    if (!isOpen) return null;
+  };
 
   // Remove contact
   const removeContact = (index) => {
@@ -406,11 +426,15 @@ const EditEmployees = () => {
             emp._id === currentEmployee._id ? response.data.data : emp
           )
         );
-
-        // Close modal and show success message
-        setShowEditModal(false);
-        setSuccessMessage("Employee details updated successfully");
-        setShowSuccessMessage(true);
+        // Show success modal
+        setSuccessModal({
+          isOpen: true,
+          message: "Employee details updated successfully!",
+        });
+        // Close success modal
+        const closeSuccessModal = () => {
+          setSuccessModal({ isOpen: false, message: "" });
+        };
 
         // Hide success message after 3 seconds
         setTimeout(() => {
@@ -457,6 +481,12 @@ const EditEmployees = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={closeSuccessModal}
+        message={successModal.message}
+      />
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}

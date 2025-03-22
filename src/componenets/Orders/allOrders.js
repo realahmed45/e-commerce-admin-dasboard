@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Home, ChevronRight, ChevronLeft, Filter } from "lucide-react";
-import Sidebar from "./sidebar";
+import Sidebar from "../Sidebar/sidebar";
 
 const OrderStatusFilters = [
   { id: "cart-not-paid", label: "In the cart not paid yet", color: "#ffd166" },

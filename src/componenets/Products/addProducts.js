@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { PlusIcon } from "lucide-react";
-import Sidebar from "./sidebar";
+import Sidebar from "../Sidebar/sidebar";
 
 const AddProduct = () => {
   // Product type state

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { ChevronDown, Upload, PlusCircle, X, AlertCircle } from "lucide-react";
-import Sidebar from "./sidebar";
+import Sidebar from "../Sidebar/sidebar";
 
 // Base URL for API requests
 const API_BASE_URL = "https://ultra-inquisitive-oatmeal.glitch.me";
@@ -46,8 +46,23 @@ const AddEmployee = ({ employeeId }) => {
   const [isActivated, setIsActivated] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+  const closeSuccessModal = () => {
+    setSuccessModal({ isOpen: false, message: "" });
+  };
+
+  // Auto-close success modal after delay
+  useEffect(() => {
+    let timer;
+    if (successModal.isOpen) {
+      timer = setTimeout(() => {
+        closeSuccessModal();
+      }, 5000); // 5 seconds
+    }
+    return () => clearTimeout(timer);
+  }, [successModal.isOpen]);
 
   // Refs for file inputs
   const profilePictureRef = useRef(null);
@@ -187,6 +202,10 @@ const AddEmployee = ({ employeeId }) => {
       }
     });
   };
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    message: "",
+  });
 
   const handleFileChange = (e, setter, previewKey) => {
     const file = e.target.files[0];
@@ -320,8 +339,11 @@ const AddEmployee = ({ employeeId }) => {
       }
 
       if (response.status === 200 || response.status === 201) {
-        setShowSuccessMessage(true);
-
+        // Show success modal
+        setSuccessModal({
+          isOpen: true,
+          message: "Employee has been added successfully!",
+        });
         // Show success message briefly and then refresh the page
         setTimeout(() => {
           window.location.reload(); // This will refresh the page
@@ -337,9 +359,18 @@ const AddEmployee = ({ employeeId }) => {
       );
     }
   };
-
+  // Success Modal Component
+  const SuccessModal = ({ isOpen, onClose, message }) => {
+    if (!isOpen) return null;
+  };
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={closeSuccessModal}
+        message={successModal.message}
+      />
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}

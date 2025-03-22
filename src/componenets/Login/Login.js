@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import backgroundImage from "../images/admin-background.jpg";
+import backgroundImage from "../Login/admin-background.jpg";
 
 const AdminLogin = () => {
   const [username, setUsername] = useState("");
