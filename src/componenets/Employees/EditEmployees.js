@@ -33,6 +33,11 @@ const EditEmployees = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [validationError, setValidationError] = useState("");
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    message: "",
+  });
+
   const closeSuccessModal = () => {
     setSuccessModal({ isOpen: false, message: "" });
   };
@@ -44,7 +49,9 @@ const EditEmployees = () => {
   const passportFrontRef = useRef(null);
   const passportBackRef = useRef(null);
   const otherDoc1Ref = useRef(null);
-  const otherDoc2Ref = useRef(null); // Auto-close success modal after delay
+  const otherDoc2Ref = useRef(null);
+
+  // Auto-close success modal after delay
   useEffect(() => {
     let timer;
     if (successModal.isOpen) {
@@ -293,13 +300,43 @@ const EditEmployees = () => {
   const addContact = () => {
     setContacts([...contacts, { name: "", relation: "", phoneNumber: "" }]);
   };
-  const [successModal, setSuccessModal] = useState({
-    isOpen: false,
-    message: "",
-  });
+
   // Success Modal Component
   const SuccessModal = ({ isOpen, onClose, message }) => {
     if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+          <div className="flex items-center justify-center mb-4 text-green-500">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-center mb-2">Success!</h3>
+          <p className="text-center text-gray-600">{message}</p>
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Remove contact
@@ -431,10 +468,9 @@ const EditEmployees = () => {
           isOpen: true,
           message: "Employee details updated successfully!",
         });
-        // Close success modal
-        const closeSuccessModal = () => {
-          setSuccessModal({ isOpen: false, message: "" });
-        };
+
+        // Hide edit modal
+        setShowEditModal(false);
 
         // Hide success message after 3 seconds
         setTimeout(() => {
@@ -478,7 +514,6 @@ const EditEmployees = () => {
       setShowDeleteConfirm(false);
     }
   };
-
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Success Modal */}

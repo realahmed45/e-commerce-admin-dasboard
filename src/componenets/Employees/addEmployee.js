@@ -46,9 +46,13 @@ const AddEmployee = ({ employeeId }) => {
   const [isActivated, setIsActivated] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    message: "",
+  });
   const [errorMessage, setErrorMessage] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+
   const closeSuccessModal = () => {
     setSuccessModal({ isOpen: false, message: "" });
   };
@@ -202,10 +206,6 @@ const AddEmployee = ({ employeeId }) => {
       }
     });
   };
-  const [successModal, setSuccessModal] = useState({
-    isOpen: false,
-    message: "",
-  });
 
   const handleFileChange = (e, setter, previewKey) => {
     const file = e.target.files[0];
@@ -359,9 +359,43 @@ const AddEmployee = ({ employeeId }) => {
       );
     }
   };
+
   // Success Modal Component
   const SuccessModal = ({ isOpen, onClose, message }) => {
     if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+          <div className="flex items-center justify-center mb-4 text-green-500">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-center mb-2">Success!</h3>
+          <p className="text-center text-gray-600">{message}</p>
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
   return (
     <div className="flex h-screen bg-gray-100">

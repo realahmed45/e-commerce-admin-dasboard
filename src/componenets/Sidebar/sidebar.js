@@ -392,7 +392,7 @@ const Sidebar = ({ onSectionClick }) => {
           number: "81.",
           icon: <Users size={18} />,
           name: "Suppliers (articial emp)",
-          path: "view-suppliers",
+          path: "/view-suppliers",
           access: "",
         },
         {

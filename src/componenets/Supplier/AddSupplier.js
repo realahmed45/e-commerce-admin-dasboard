@@ -319,6 +319,7 @@ const SupplierProfile = () => {
     return () => clearTimeout(timer);
   }, [successModal.isOpen]);
 
+  // Modified handleSubmit function to properly handle file uploads
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -334,9 +335,9 @@ const SupplierProfile = () => {
       // Prepare form data for submission
       const submitData = new FormData();
 
-      // Append all form fields
+      // Append all non-file form fields
       Object.keys(formData).forEach((key) => {
-        // Skip appending arrays directly
+        // Skip appending arrays and files directly
         if (
           key !== "profilePicture" &&
           key !== "idCardFront" &&
@@ -351,7 +352,7 @@ const SupplierProfile = () => {
         }
       });
 
-      // For array fields, either skip or append as JSON strings
+      // For array fields, append as JSON strings
       if (formData.orders && formData.orders.length > 0) {
         submitData.append("orders", JSON.stringify(formData.orders));
       }
@@ -370,23 +371,75 @@ const SupplierProfile = () => {
         );
       }
 
-      // Append files
-      if (formData.profilePicture)
-        submitData.append("profilePicture", formData.profilePicture);
-      if (formData.idCardFront)
-        submitData.append("idCardFront", formData.idCardFront);
-      if (formData.idCardBack)
-        submitData.append("idCardBack", formData.idCardBack);
-      if (formData.passportFront)
-        submitData.append("passportFront", formData.passportFront);
-      if (formData.passportBack)
-        submitData.append("passportBack", formData.passportBack);
+      // Properly append files with specific naming and handling
+      if (formData.profilePicture) {
+        // Ensure correct filename extension is preserved
+        const profilePicFileName = `profile_${Date.now()}_${
+          formData.profilePicture.name
+        }`;
+        // Create a new file object with proper name to ensure it's detected correctly on server
+        const renamedProfilePic = new File(
+          [formData.profilePicture],
+          profilePicFileName,
+          { type: formData.profilePicture.type }
+        );
+        submitData.append("profilePicture", renamedProfilePic);
+      }
 
+      // Apply the same pattern to other image files
+      if (formData.idCardFront) {
+        const idFrontFileName = `idfront_${Date.now()}_${
+          formData.idCardFront.name
+        }`;
+        const renamedIdFront = new File(
+          [formData.idCardFront],
+          idFrontFileName,
+          { type: formData.idCardFront.type }
+        );
+        submitData.append("idCardFront", renamedIdFront);
+      }
+
+      if (formData.idCardBack) {
+        const idBackFileName = `idback_${Date.now()}_${
+          formData.idCardBack.name
+        }`;
+        const renamedIdBack = new File([formData.idCardBack], idBackFileName, {
+          type: formData.idCardBack.type,
+        });
+        submitData.append("idCardBack", renamedIdBack);
+      }
+
+      if (formData.passportFront) {
+        const passportFrontFileName = `passportfront_${Date.now()}_${
+          formData.passportFront.name
+        }`;
+        const renamedPassportFront = new File(
+          [formData.passportFront],
+          passportFrontFileName,
+          { type: formData.passportFront.type }
+        );
+        submitData.append("passportFront", renamedPassportFront);
+      }
+
+      if (formData.passportBack) {
+        const passportBackFileName = `passportback_${Date.now()}_${
+          formData.passportBack.name
+        }`;
+        const renamedPassportBack = new File(
+          [formData.passportBack],
+          passportBackFileName,
+          { type: formData.passportBack.type }
+        );
+        submitData.append("passportBack", renamedPassportBack);
+      }
+
+      // Add content type header for multipart/form-data
       const response = await fetch(
         "https://ultra-inquisitive-oatmeal.glitch.me/api/suppliers",
         {
           method: "POST",
           body: submitData,
+          // Don't set Content-Type header manually as browser will set it with boundary
         }
       );
 
@@ -410,6 +463,9 @@ const SupplierProfile = () => {
         setFormData((prev) => ({ ...prev, supplierId: data.supplier._id }));
       }
 
+      // Optional: Log successful upload for debugging
+      console.log("Images uploaded successfully:", data);
+
       // Set a timeout to reload the page after showing the success message
       setTimeout(() => {
         window.location.reload();
@@ -421,6 +477,62 @@ const SupplierProfile = () => {
       setLoading(false);
     }
   };
+
+  // Add this function to properly handle image display when viewing the supplier
+  // This function should be called in the useEffect that loads supplier data
+  const loadSupplierImages = (supplierData) => {
+    // Check if supplier data has image URLs
+    if (supplierData) {
+      // Set preview URLs for the images if they exist in the data
+      setPreviewUrls({
+        profilePicture: supplierData.profilePicture
+          ? supplierData.profilePicture
+          : null,
+        idCardFront: supplierData.idCardFront ? supplierData.idCardFront : null,
+        idCardBack: supplierData.idCardBack ? supplierData.idCardBack : null,
+        passportFront: supplierData.passportFront
+          ? supplierData.passportFront
+          : null,
+        passportBack: supplierData.passportBack
+          ? supplierData.passportBack
+          : null,
+      });
+    }
+  };
+
+  // Add this useEffect to your component to load existing supplier data (if editing)
+  useEffect(() => {
+    // This function would be called when editing an existing supplier
+    const fetchSupplierData = async () => {
+      if (formData.supplierId) {
+        try {
+          const response = await fetch(
+            `https://ultra-inquisitive-oatmeal.glitch.me/api/suppliers/${formData.supplierId}`
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            // Set form data from the retrieved supplier
+            setFormData((prevData) => ({
+              ...prevData,
+              ...data.supplier,
+            }));
+
+            // Set preview URLs for the images
+            loadSupplierImages(data.supplier);
+          }
+        } catch (error) {
+          console.error("Error fetching supplier data:", error);
+          toast.error("Failed to load supplier data");
+        }
+      }
+    };
+
+    // Call the function to fetch supplier data if we have an ID
+    if (formData.supplierId) {
+      fetchSupplierData();
+    }
+  }, [formData.supplierId]);
   return (
     <div className="flex bg-gray-100 min-h-screen">
       {/* Success Modal */}
